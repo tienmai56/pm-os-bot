@@ -73,7 +73,7 @@ export async function pullMeetings(
   maxResults: number = 20
 ): Promise<ToolResult> {
   try {
-    let query = `label:${label}`;
+    let query = `label:${label} from:gemini subject:Notes:`;
 
     if (since) {
       const match = since.match(/^(\d+)([dw])$/);
