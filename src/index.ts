@@ -1,6 +1,7 @@
 import express from "express";
 import { config } from "./config";
 import telegramRouter from "./bot/telegram";
+import { startScheduler } from "./scheduler";
 
 const app = express();
 
@@ -18,4 +19,5 @@ app.listen(config.port, "0.0.0.0", () => {
   console.log(`pm-os-bot running on port ${config.port}`);
   console.log(`Telegram webhook endpoint: /webhook/telegram`);
   console.log(`GitHub repo: ${config.githubOwner}/${config.githubRepo}`);
+  startScheduler();
 });

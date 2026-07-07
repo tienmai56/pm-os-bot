@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { config } from "../config";
 import { chat } from "../ai/claude";
 import { ConversationMessage } from "../types";
+import { saveChatId } from "../store";
 
 const router = Router();
 
@@ -20,7 +21,7 @@ interface TelegramUpdate {
   };
 }
 
-async function sendTelegramMessage(
+export async function sendTelegramMessage(
   chatId: number,
   text: string
 ): Promise<void> {
@@ -102,6 +103,9 @@ router.post("/", async (req: Request, res: Response) => {
 
   const chatId = update.message.chat.id;
   const userText = update.message.text;
+
+  // Persist chat ID for scheduled messages
+  saveChatId(chatId);
 
   console.log(`[Telegram] Message from chat ${chatId}: ${userText}`);
 
