@@ -74,7 +74,7 @@ export async function chat(
   const systemPrompt = await getSystemPrompt();
 
   let response = await client.messages.create({
-    model: "claude-sonnet-4-5",
+    model: "claude-haiku-4-5",
     max_tokens: 4096,
     system: systemPrompt,
     tools: allToolDefinitions,
@@ -113,7 +113,7 @@ export async function chat(
     messages.push({ role: "user", content: toolResults });
 
     response = await client.messages.create({
-      model: "claude-sonnet-4-5",
+      model: "claude-haiku-4-5",
       max_tokens: 4096,
       system: systemPrompt,
       tools: allToolDefinitions,
