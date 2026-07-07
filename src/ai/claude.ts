@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { config } from "../config";
-import { githubToolDefinitions, executeGitHubTool } from "../tools/github";
+import { githubToolDefinitions, executeGitHubTool, readFile } from "../tools/github";
 import { gmailToolDefinitions, executeGmailTool } from "../tools/gmail";
 import { ConversationMessage } from "../types";
 
@@ -20,7 +20,7 @@ async function executeTool(
 
 const client = new Anthropic({ apiKey: config.anthropicApiKey });
 
-const SYSTEM_PROMPT = `You are a PM assistant bot. You help the user — a product manager — with their work. You have access to their PM-OS GitHub repository (${config.githubOwner}/${config.githubRepo}) which contains company knowledge, documents, PRDs, meeting notes, and other project artifacts.
+const BASE_PROMPT = `You are a PM assistant bot. You help the user — a product manager — with their work. You have access to their PM-OS GitHub repository (${config.githubOwner}/${config.githubRepo}) which contains company knowledge, documents, PRDs, meeting notes, and other project artifacts.
 
 Your capabilities:
 - Read files from the PM-OS repo to answer questions about the company, products, and projects
@@ -38,6 +38,27 @@ Guidelines:
 - If you can't find information in the repo, say so clearly rather than guessing.
 - When asked to pull meetings, use pull_meetings to fetch from Gmail, then use create_file to save each meeting to raw/transcripts/{folder}/{filename} in the repo.`;
 
+// Fetch CLAUDE.md from the PM-OS repo and cache it
+let cachedSystemPrompt: string | null = null;
+
+async function getSystemPrompt(): Promise<string> {
+  if (cachedSystemPrompt) return cachedSystemPrompt;
+
+  try {
+    const result = await readFile("CLAUDE.md");
+    if (!result.isError) {
+      console.log("[System] Loaded CLAUDE.md from PM-OS repo");
+      cachedSystemPrompt = `${BASE_PROMPT}\n\n---\n\nBelow are the project instructions from CLAUDE.md in the PM-OS repo. Follow these instructions:\n\n${result.content}`;
+      return cachedSystemPrompt;
+    }
+  } catch (err) {
+    console.log("[System] Could not fetch CLAUDE.md, using base prompt");
+  }
+
+  cachedSystemPrompt = BASE_PROMPT;
+  return cachedSystemPrompt;
+}
+
 export async function chat(
   userMessage: string,
   conversationHistory: ConversationMessage[]
@@ -50,10 +71,12 @@ export async function chat(
     { role: "user", content: userMessage },
   ];
 
+  const systemPrompt = await getSystemPrompt();
+
   let response = await client.messages.create({
     model: "claude-sonnet-4-5",
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
     tools: allToolDefinitions,
     messages,
   });
@@ -92,7 +115,7 @@ export async function chat(
     response = await client.messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       tools: allToolDefinitions,
       messages,
     });
