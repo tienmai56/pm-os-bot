@@ -1,7 +1,22 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { config } from "../config";
 import { githubToolDefinitions, executeGitHubTool } from "../tools/github";
+import { gmailToolDefinitions, executeGmailTool } from "../tools/gmail";
 import { ConversationMessage } from "../types";
+
+const allToolDefinitions = [...githubToolDefinitions, ...gmailToolDefinitions];
+
+async function executeTool(
+  toolName: string,
+  input: Record<string, any>
+) {
+  // Gmail tools
+  if (toolName === "pull_meetings") {
+    return executeGmailTool(toolName, input);
+  }
+  // GitHub tools
+  return executeGitHubTool(toolName, input);
+}
 
 const client = new Anthropic({ apiKey: config.anthropicApiKey });
 
@@ -12,13 +27,16 @@ Your capabilities:
 - Browse the repo structure to find relevant documents
 - Search the repo for specific topics
 - Generate PRDs, summaries, and analyses based on the repo content
+- Create or update files in the PM-OS repo
+- Pull meeting notes from Gmail (emails labeled "MeetingNotes") and save them to the repo
 
 Guidelines:
 - When the user asks about company information, ALWAYS check the repo first before answering.
 - Start by listing the root directory to understand the repo structure if you haven't already.
 - Be concise in your responses — the user is on mobile (Telegram/WhatsApp).
 - When generating PRDs or documents, follow any templates found in the repo.
-- If you can't find information in the repo, say so clearly rather than guessing.`;
+- If you can't find information in the repo, say so clearly rather than guessing.
+- When asked to pull meetings, use pull_meetings to fetch from Gmail, then use create_file to save each meeting to raw/transcripts/{folder}/{filename} in the repo.`;
 
 export async function chat(
   userMessage: string,
@@ -36,7 +54,7 @@ export async function chat(
     model: "claude-sonnet-4-20250818",
     max_tokens: 4096,
     system: SYSTEM_PROMPT,
-    tools: githubToolDefinitions,
+    tools: allToolDefinitions,
     messages,
   });
 
@@ -51,7 +69,7 @@ export async function chat(
 
     for (const toolUse of toolUseBlocks) {
       console.log(`[Tool Call] ${toolUse.name}:`, JSON.stringify(toolUse.input));
-      const result = await executeGitHubTool(
+      const result = await executeTool(
         toolUse.name,
         toolUse.input as Record<string, any>
       );
@@ -75,7 +93,7 @@ export async function chat(
       model: "claude-sonnet-4-20250818",
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
-      tools: githubToolDefinitions,
+      tools: allToolDefinitions,
       messages,
     });
   }
