@@ -14,7 +14,7 @@ app.get("/", (_req, res) => {
 // Telegram webhook
 app.use("/webhook/telegram", telegramRouter);
 
-app.listen(config.port, () => {
+app.listen(config.port, "0.0.0.0", () => {
   console.log(`pm-os-bot running on port ${config.port}`);
   console.log(`Telegram webhook endpoint: /webhook/telegram`);
   console.log(`GitHub repo: ${config.githubOwner}/${config.githubRepo}`);
