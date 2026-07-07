@@ -33,7 +33,7 @@ export async function chat(
   ];
 
   let response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-20250818",
     max_tokens: 4096,
     system: SYSTEM_PROMPT,
     tools: githubToolDefinitions,
@@ -72,7 +72,7 @@ export async function chat(
     messages.push({ role: "user", content: toolResults });
 
     response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-20250818",
       max_tokens: 4096,
       system: SYSTEM_PROMPT,
       tools: githubToolDefinitions,
