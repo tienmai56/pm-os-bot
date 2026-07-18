@@ -18,13 +18,3 @@ export function saveChatId(chatId: number): void {
   }
 }
 
-export function getChatId(): number | null {
-  if (cachedChatId) return cachedChatId;
-  try {
-    const data = fs.readFileSync(CHAT_ID_FILE, "utf-8").trim();
-    cachedChatId = parseInt(data, 10);
-    return cachedChatId;
-  } catch {
-    return null;
-  }
-}
